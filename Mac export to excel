@@ -1,0 +1,41 @@
+# This is a sample Python script.
+import pandas as pd
+import json
+import textfsm
+import os
+from netmiko import ConnectHandler
+import xlsxwriter
+from getpass import getpass
+
+device1 = {
+                             "host": '192.168.0.250',
+                             "username": 'blake',
+                             "password": 'blake',
+                             "device_type": 'cisco_ios',
+                             "session_log": 'my_session.txt',
+                             "secret": 'blake',
+                                                          }
+
+
+
+
+
+net_connect = ConnectHandler(**device1)
+mac_output = (net_connect.send_command('show mac address-table | exclude CPU', use_textfsm=True))
+int_output = net_connect.send_command ("show interfaces status", use_textfsm = True)
+
+
+
+
+mac_data = {'mac':  [entry['destination_address'] for entry in mac_output],
+           'interface': [entry['destination_port'] for entry in mac_output],
+          'vlan': [entry['vlan_id'] for entry in mac_output]
+
+
+          }
+
+df = pd.DataFrame(mac_data, columns=list(mac_data.keys()))
+
+writer = pd.ExcelWriter('mac_table.xlsx', engine='xlsxwriter')
+df.to_excel(writer, 'Sheet1')
+writer.close()
